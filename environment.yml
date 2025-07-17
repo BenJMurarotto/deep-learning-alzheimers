@@ -1,0 +1,6 @@
+name: cosc591
+channels:
+  - defaults
+dependencies:
+  - python=3.10.0
+prefix: /home/benmurarotto/miniconda3/envs/cosc591
