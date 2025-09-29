@@ -69,33 +69,49 @@ st.divider()
 st.write("### **Get started by uploading an image of a retina below**")
 
 # Loading the model
-MODEL_DIR = "vit_pretrained_fine_tuning"
+MODEL_FOLDERS = {
+    "Model 1" : {
+        "path": "vit_pretrained_fine_tuning",
+        "input": {"size" : (50,50), "channels":1},
+        "mode": "gray"
+    },
+    "Model 384" :{
+        "path": "vit_pretrained_feature_extractor_384",
+        "input" : {"size" : (50,50), "channels": 1},
+        "mode": "gray"    
+    },
+
+    "Model 224" :{
+        "path": "vit_pretrained_fine_tuning_224",
+        "input" : {"size" : (50,50), "channels" : 1},
+        "mode" : "gray"
+    },
+
+}
 
 @st.cache_resource(show_spinner=True)
-def load_model():
+def load_model(key):
+    config = MODEL_FOLDERS[key]
     model = tf.keras.models.load_model(
-        MODEL_DIR,
-        custom_objects={"TFViTModel": TFViTModel},
-        compile=False,
-        safe_mode=False
+        config["path"], 
+        custom_objects = {"TFViTModel": TFViTModel},
+        compile = False,
+        safe_mode = False
     )
     return model
-
-model = load_model()
 
 # ---- Inference helpers ----
 TARGET_H, TARGET_W, TARGET_C = 50, 50, 1
 CLASS_NAMES = ["Non-Alzheimer's", "Alzheimer's"]
 
 def preprocess(pil_img: Image.Image):
-    # Convert to grayscale, resize to 50x50, normalize to [0,1], add channel dim.
     img = np.array(pil_img.convert("L"), dtype=np.float32)  # grayscale
-    img = cv2.resize(img, (TARGET_W, TARGET_H), interpolation=cv2.INTER_LINEAR)
-    maxv = img.max()
-    if maxv > 0:
-        img = img / maxv  # normalize to [0,1]
-    img = img[..., None]  # (H, W, 1)
-    return np.expand_dims(img, axis=0)  # (1, H, W, 1)
+    img = cv2.resize(img, (50, 50), interpolation=cv2.INTER_LINEAR)
+    if img.max() > 0:
+        img = img / img.max()
+    img = img[..., None]  # add channel dimension
+    return np.expand_dims(img, axis=0)  # add batch dimension
+
 
 def postprocess(pred, threshold=0.5):
     # Model outputs a single sigmoid neuron
@@ -107,19 +123,16 @@ def postprocess(pred, threshold=0.5):
     return label, confid, probs
 
 # UI
+model_key = st.selectbox("Choose model", list(MODEL_FOLDERS.keys()))
 threshold = st.slider("Decision threshold for Alzheimer's", 0.0, 1.0, 0.5, 0.01)
 uploaded = st.file_uploader("Upload retinal image (PNG/JPG/JPEG)", type=["png", "jpg", "jpeg"])
 
 
-col1, col2 = st.columns(2)
-
-if uploaded is not None and uploaded.name != st.session_state.last_file:
-    st.session_state.raw_pred = None
-    st.session_state.last_file = uploaded.name
+col1, col2 = st.columns([1, 1])
 
 if uploaded is not None:
     pil_img = Image.open(uploaded).convert("RGB")
-    col1.image(pil_img, caption="Uploaded image", use_column_width=True)
+    col1.image(pil_img, caption="Uploaded image", use_container_width=True)
 
     # buttons
     c1, c2 = col1.columns([1,1])
@@ -131,14 +144,16 @@ if uploaded is not None:
 
     if run_clicked:
         with st.spinner("Running inference..."):
+            cfg = MODEL_FOLDERS[model_key]
+            model = load_model(model_key)
             x = preprocess(pil_img)
             pred = model.predict(x, verbose=0)
-            st.session_state.raw_pred = float(np.squeeze(pred))
+            st.session_state.raw_pred = pred
 
-            # save in history
-            lbl, conf, pr = postprocess(np.array(st.session_state.raw_pred), threshold=threshold)
+            lbl, conf, pr = postprocess(st.session_state.raw_pred, threshold=threshold)
             st.session_state.history.append({
                 "file": uploaded.name,
+                "model": model_key,
                 "label": lbl,
                 "confidence": str(round(conf*100,1)) + "%",
                 "probs": pr
@@ -163,6 +178,9 @@ else:
 if st.session_state.history:
     st.subheader("Prediction History")
     for i, h in enumerate(reversed(st.session_state.history), 1):
-        with st.expander(f"{i}. {h['file']} - {h['label']} ({h['confidence']})"):
+        # show model in the header
+        header = f"{i}. {h['file']} — {h.get('model','(unknown model)')} — {h['label']} ({h['confidence']})"
+        with st.expander(header):
+            st.write(f"**Model used:** {h.get('model','N/A')}")
             st.json(h['probs'])
 
