@@ -87,6 +87,12 @@ MODEL_FOLDERS = {
         "mode" : "gray"
     },
 
+    "Model scratch" : {
+        "path": "vit_scratch",
+        "input": {"size": (50,50), "channels" : 1},
+        "mode" : "gray"
+    },
+
 }
 
 @st.cache_resource(show_spinner=True)
