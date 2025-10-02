@@ -1,4 +1,3 @@
-
 1. Clone the repository
 git clone https://github.com/BenJMurarotto/deep-learning-alzheimers.git
 cd deep-learning-alzheimers/frontend
