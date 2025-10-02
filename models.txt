@@ -1,0 +1,3 @@
+This google drive contains access to zip folders containing trained models and weights. 
+Please extract the model of choice to the folder frontend/ when running the streamlit application.
+https://drive.google.com/drive/folders/1IluOJ2ztWW5kFwSwRfba0yMul9UvruSC?usp=drive_link
