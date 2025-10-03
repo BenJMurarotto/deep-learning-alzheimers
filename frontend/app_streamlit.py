@@ -70,18 +70,31 @@ st.write("### **Get started by uploading an image of a retina below**")
 
 # Loading the model
 MODEL_FOLDERS = {
-    "Model 1" : {
+    "Model feature_extractor" : {
+        "path": "vit_pretrained_feature_extractor",
+        "input": {"size" : (50,50), "channels":1},
+        "mode": "gray"
+    },
+
+    "Model fine_tuning" : {
         "path": "vit_pretrained_fine_tuning",
         "input": {"size" : (50,50), "channels":1},
         "mode": "gray"
     },
-    "Model 384" :{
+
+    "Model 384_featureextractor" :{
         "path": "vit_pretrained_feature_extractor_384",
         "input" : {"size" : (50,50), "channels": 1},
         "mode": "gray"    
     },
 
-    "Model 224" :{
+    "Model 384_featureextractor" :{
+        "path": "vit_pretrained_feature_extractor_224",
+        "input" : {"size" : (50,50), "channels": 1},
+        "mode": "gray"    
+    },
+
+    "Model 224_finetuning" :{
         "path": "vit_pretrained_fine_tuning_224",
         "input" : {"size" : (50,50), "channels" : 1},
         "mode" : "gray"
